@@ -746,6 +746,23 @@
         }
         oldUpdateObjects(data);
     };
+    // --- Téléportation de la balle par clic sur le terrain ---
+    // Correction : utiliser scene.pick avec pointerX/pointerY de l'événement Babylon.js
+    canvas.addEventListener('pointerdown', function(evt) {
+        // Utiliser les coordonnées relatives au canvas ET tenir compte du scroll
+        const x = evt.clientX - canvas.getBoundingClientRect().left;
+        const y = evt.clientY - canvas.getBoundingClientRect().top;
+        // Utiliser engine.getRenderWidth/Height pour normaliser
+        const pickResult = scene.pick(x * engine.getRenderWidth() / canvas.width, y * engine.getRenderHeight() / canvas.height);
+        if (pickResult && pickResult.hit && pickResult.pickedMesh && pickResult.pickedMesh.name === 'ground') {
+            const picked = pickResult.pickedPoint;
+            fetch('/teleporte_ball', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({x: picked.x, y: picked.z})
+            });
+        }
+    });
     </script>
 </body>
 </html>

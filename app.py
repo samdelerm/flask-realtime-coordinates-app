@@ -18,9 +18,22 @@ def goto_config():
     executor.submit(run_goto_config, config)
     return '', 204
 
+@app.route('/teleporte_ball', methods=['POST'])
+def teleporte_ball():
+    data = request.get_json()
+    x = data.get('x')
+    y = data.get('y')
+    print(f"Teleporting ball to ({x}, {y})")
+    executor.submit(run_teleport_ball, x, y)
+    return '', 204
+
 def run_goto_config(config):
     with rsk.Client() as client:
         client.goto_configuration(config, wait=False)
+
+def run_teleport_ball(x, y):
+    with rsk.Client() as client:
+        client.teleport_ball(x, y)
 
 def update_coordinates():
     points = {
