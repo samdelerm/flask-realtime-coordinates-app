@@ -4,7 +4,7 @@ import rsk
 import numpy as np
 
 # Adresse et port du serveur Flask SocketIO
-SERVER_URL = 'http://localhost:5000'  # À adapter si le serveur est distant
+SERVER_URL = input("url page web")  # À adapter si le serveur est distant
 
 # Crée un client SocketIO
 sio = socketio.Client()
@@ -28,7 +28,7 @@ def send_coordinates_loop():
         return x
     while True:
         try:
-            with rsk.Client("rsk.simulateur.les-amicales.fr") as client:
+            with rsk.Client(input("quel ip gc")) as client:
                 while True:
                     ball = to_tuple(client.ball)
                     blue1 = tuple(map(to_tuple, client.blue1.pose))
