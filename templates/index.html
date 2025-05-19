@@ -164,23 +164,10 @@
 </head>
 <body>
     <header>
-        <h1>Terrain 3D - Coordonnées en temps réel</h1>
         <div class="config-bar">
-            
             <button onclick="setView('reset')">Reset</button>
-            <select id="goto-config-select-2" title="Choisir la configuration">
-                <option value="game">Mode JEU</option>
-                <option value="dots">Position DOTS</option>
-                <option value="side">Position SIDE</option>
-            </select>
-            <button id="goto-config-btn">Valider</button>
-            <!-- Ajout des nouveaux boutons -->
-            <button id="record-btn">Enregistrer</button>
-            <button id="replay-btn">Replay</button>
+            <!-- Suppression du select et du bouton goto-config -->
             <button id="fullscreen-btn">Plein écran</button>
-            <button id="export-btn">Exporter CSV</button>
-        </div>
-        <div id="view-buttons">
             <button onclick="setView('top')">Vue du dessus</button>
             <button onclick="setView('side')">Vue latérale</button>
             <button onclick="setView('perspective')">Perspective</button>
@@ -188,11 +175,6 @@
     </header>
     <canvas id="terrain3d" tabindex="0"></canvas>
     <div id="animation-overlay"></div>
-    <div id="infos-math">
-        <h2>Informations mathématiques</h2>
-        <div id="coords"></div>
-        <div id="trajectoires"></div>
-    </div>
     <footer>
         <p class="footer-signature">Développé par Samuel Legrand - 2025</p>
     </footer>
@@ -257,6 +239,8 @@
     const canvas = document.getElementById("terrain3d");
     const engine = new BABYLON.Engine(canvas, true);
     const scene = new BABYLON.Scene(engine);
+    // Racine pour rotation globale
+    const root = new BABYLON.TransformNode("root", scene);
     // Camera orbitale
     const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI/2, Math.PI/2.5, 2.5, new BABYLON.Vector3(0,0,0), scene);
     camera.attachControl(canvas, true);
@@ -265,6 +249,7 @@
     // Sol (terrain) avec plus de subdivisions pour une meilleure interpolation
     const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:field_length, height:field_width, subdivisions: 8}, scene);
     ground.position.y = 0;
+    ground.parent = root;
     const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
     // Texture d'herbe libre de droits (Three.js CDN, hotlink autorisé)
     const grassTex = new BABYLON.Texture("https://threejs.org/examples/textures/terrain/grasslight-big.jpg", scene);
@@ -292,6 +277,7 @@
     outline.color = new BABYLON.Color3(1,1,1);
     outline.enableEdgesRendering();
     outline.edgesWidth = 8;
+    outline.parent = root;
     // Ajout de lignes blanches pour marquage terrain
     function createFieldLines() {
         // Rectangle principal
@@ -350,6 +336,7 @@
     // Bordure (carpet)
     const border = BABYLON.MeshBuilder.CreateGround("border", {width:field_length+2*border_size, height:field_width+2*border_size, subdivisions: 2}, scene);
     border.position.y = -0.002;
+    border.parent = root;
     const borderMat = new BABYLON.StandardMaterial("borderMat", scene);
     borderMat.diffuseColor = new BABYLON.Color3(0.11, 0.36, 0.11);
     borderMat.specularColor = new BABYLON.Color3(0.1,0.2,0.1);
@@ -375,15 +362,18 @@
         post1.position = new BABYLON.Vector3(x, goal_virtual_height/2, y1);
         post1.material = new BABYLON.StandardMaterial("postMat1", scene);
         post1.material.diffuseColor = color;
+        post1.parent = root;
         const post2 = BABYLON.MeshBuilder.CreateBox("post2", {height:goal_virtual_height, width:0.02, depth:0.02}, scene);
         post2.position = new BABYLON.Vector3(x, goal_virtual_height/2, y2);
         post2.material = new BABYLON.StandardMaterial("postMat2", scene);
         post2.material.diffuseColor = color;
+        post2.parent = root;
         // Barre transversale
         const bar = BABYLON.MeshBuilder.CreateBox("bar", {height:0.02, width:0.02, depth:goal_width}, scene);
         bar.position = new BABYLON.Vector3(x, goal_virtual_height, 0);
         bar.material = new BABYLON.StandardMaterial("barMat", scene);
         bar.material.diffuseColor = color;
+        bar.parent = root;
     }
     // Inversion des couleurs : but bleu à gauche, but vert à droite
     createGoal(field_length/2, new BABYLON.Color3(0,1,0)); // But vert à droite
@@ -402,6 +392,7 @@
     blueZone.material = new BABYLON.StandardMaterial("blueZoneMat", scene);
     blueZone.material.diffuseColor = new BABYLON.Color3(0.1, 0.3, 0.1); // Vert uni
     blueZone.material.specularColor = new BABYLON.Color3(0,0,0);
+    blueZone.parent = root;
     // Zone verte (côté vert, à gauche)
     const greenZone = BABYLON.MeshBuilder.CreateGround("greenZone", {
         width: teamZoneLength,
@@ -413,19 +404,20 @@
     greenZone.material = new BABYLON.StandardMaterial("greenZoneMat", scene);
     greenZone.material.diffuseColor = new BABYLON.Color3(0.1, 0.3, 0.1); // Vert uni
     greenZone.material.specularColor = new BABYLON.Color3(0,0,0);
+    greenZone.parent = root;
     // --- Objets dynamiques (robots, balle) ---
     function createFlatFrontRobot(name, color, scene, number) {
         // Corps principal (cylindre)
         const body = BABYLON.MeshBuilder.CreateCylinder(name + "_body", {
-            diameter: robot_radius * 2,
+            diameter: robot_radius*1 ,
             height: robot_height,
             tessellation: 48
         }, scene);
         // Plat avant (boîte fine)
         const flat = BABYLON.MeshBuilder.CreateBox(name + "_flat", {
-            width: robot_radius * 2,
+            width: robot_radius * 1.1,
             height: robot_height * 1.01,
-            depth: robot_radius * 2
+            depth: robot_radius * 1
 
         }, scene);
         flat.position.z = robot_radius * 0.5;
@@ -452,6 +444,7 @@
         numPlane.rotation.x = Math.PI/2;
         // Grouper
         const robot = BABYLON.Mesh.MergeMeshes([body, flat, numPlane], true, false, undefined, false, true);
+        robot.parent = root;
         return robot;
     }
     const robots = {
@@ -465,6 +458,7 @@
     ball.position.y = ball_radius;
     ball.material = new BABYLON.StandardMaterial("ballmat", scene);
     ball.material.diffuseColor = new BABYLON.Color3(1,0,0);
+    ball.parent = root;
     // --- Points fixes et surbrillance ---
     const fixedPoints = {};
     const highlightCircle = BABYLON.MeshBuilder.CreateTorus('highlightCircle', {
@@ -477,6 +471,7 @@
     highlightCircle.material.alpha = 0.85;
     highlightCircle.material.specularColor = new BABYLON.Color3(1, 0.9, 0.3);
     highlightCircle.material.wireframe = false;
+    highlightCircle.parent = root;
 
     const pointCoords = {
         point1: [0.45, 0.3],
@@ -495,6 +490,7 @@
         fixedPoints[name] = mesh;
         // Ajout d'une ombre douce
         mesh.receiveShadows = true;
+        mesh.parent = root;
     }
 
     // --- Animation et update ---
@@ -509,8 +505,7 @@
         robots.blue2.rotation.y = -data.blue2[2] + Math.PI/2;
         robots.green1.rotation.y = -data.green1[2] + Math.PI/2;
         robots.green2.rotation.y = -data.green2[2] + Math.PI/2;
-        // --- Trajectoires ---
-        drawTrajectories(data);
+        // --- Suppression du tracé des trajectoires ---
         checkGoal(data);
         // --- Points fixes highlight ---
         if (data.highlight_point && fixedPoints[data.highlight_point]) {
@@ -521,44 +516,6 @@
             highlightCircle.isVisible = false;
         }
         updateTeamLabels(data);
-    }
-
-    // --- Traçage des trajectoires ---
-    let trajMeshes = [null, null]; // [blue1, green1]
-    function drawTrajectories(data) {
-        // Trajectoire blue1
-        const length = 2.5; // longueur arbitraire
-        const x1 = data.ball[0], y1 = data.ball[1];
-        const angleBlue = data.blue1[2];
-        const x2 = x1 + length * Math.cos(angleBlue);
-        const y2 = y1 + length * Math.sin(angleBlue);
-        updateLine3D(0, x1, y1, x2, y2, 0x0000ff);
-        // Trajectoire green1
-        const angleGreen = data.green1[2];
-        const x2g = x1 + length * Math.cos(angleGreen);
-        const y2g = y1 + length * Math.sin(angleGreen);
-        updateLine3D(1, x1, y1, x2g, y2g, 0x00ff00);
-    }
-    function updateLine3D(idx, x1, y1, x2, y2, color) {
-        const points = [
-            new BABYLON.Vector3(x1, ball_radius, y1),
-            new BABYLON.Vector3(x2, ball_radius, y2)
-        ];
-        if (!trajMeshes[idx]) {
-            trajMeshes[idx] = BABYLON.MeshBuilder.CreateLines("traj"+idx, {
-                points,
-                updatable: true,
-                colors: [
-                    new BABYLON.Color4((color>>16&255)/255, (color>>8&255)/255, (color&255)/255, 1),
-                    new BABYLON.Color4((color>>16&255)/255, (color>>8&255)/255, (color&255)/255, 1)
-                ]
-            }, scene);
-        } else {
-            BABYLON.MeshBuilder.CreateLines("traj"+idx, {
-                points,
-                instance: trajMeshes[idx]
-            });
-        }
     }
 
     engine.runRenderLoop(function () {
@@ -607,13 +564,10 @@
         html += '</ul>';
         document.getElementById('coords').innerHTML = html;
     }
-    document.getElementById('goto-config-btn').onclick = function() {
-        const config = document.getElementById('goto-config-select-2').value;
-        fetch('/goto_config', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({config})
-        });
+    document.getElementById('fullscreen-btn').onclick = function() {
+        if (canvas.requestFullscreen) canvas.requestFullscreen();
+        else if (canvas.webkitRequestFullscreen) canvas.webkitRequestFullscreen();
+        else if (canvas.msRequestFullscreen) canvas.msRequestFullscreen();
     };
     // --- Animation de but ---
     let lastGoal = null;
@@ -645,84 +599,90 @@
     gl.intensity = 0.7;
     gl.addIncludedOnlyMesh(highlightCircle);
     Object.values(fixedPoints).forEach(mesh => gl.addIncludedOnlyMesh(mesh));
-    // --- Affichage dynamique des noms d'équipe ---
-    let blueTeamLabel, greenTeamLabel;
+    // --- Affichage dynamique des noms d'équipe et scores ---
+    let blueTeamLabel, greenTeamLabel, vsLabel;
     function createTeamLabels() {
+        // Blue team label (right, outside field)
         if (!blueTeamLabel) {
-            blueTeamLabel = BABYLON.MeshBuilder.CreatePlane("blueTeamLabel", {width:0.32, height:0.10}, scene);
-            blueTeamLabel.position = new BABYLON.Vector3(-field_length/2 - 0.25, 0.10, 0); // à l'extérieur du terrain, côté gauche
+            const tex = new BABYLON.DynamicTexture("blueTeamTex", {width:512, height:128}, scene, false);
+            tex.hasAlpha = true;
+            const mat = new BABYLON.StandardMaterial("blueTeamMat", scene);
+            mat.diffuseTexture = tex;
+            mat.emissiveColor = new BABYLON.Color3(1,1,1);
+            mat.specularColor = new BABYLON.Color3(0,0,0);
+            mat.backFaceCulling = false;
+            blueTeamLabel = BABYLON.MeshBuilder.CreatePlane("blueTeamLabel", {width:0.55, height:0.13}, scene);
+            blueTeamLabel.material = mat;
+            blueTeamLabel.position.x = field_length/2 + teamZoneLength/2 + 0.01;
+            blueTeamLabel.position.y = 0.13;
+            blueTeamLabel.position.z = field_width/2 + 0.18; // aligné avec VS
             blueTeamLabel.rotation.x = Math.PI/2;
-            blueTeamLabel.material = new BABYLON.StandardMaterial("blueTeamLabelMat", scene);
-            blueTeamLabel.material.diffuseTexture = new BABYLON.DynamicTexture("blueTeamLabelTex", {width:512, height:128}, scene, true);
-            blueTeamLabel.material.diffuseTexture.hasAlpha = true;
-            blueTeamLabel.material.emissiveColor = new BABYLON.Color3(1,1,1);
-            blueTeamLabel.material.specularColor = new BABYLON.Color3(0,0,0);
-            blueTeamLabel.material.backFaceCulling = false;
+            blueTeamLabel.parent = root;
         }
+        // Green team label (left, outside field)
         if (!greenTeamLabel) {
-            greenTeamLabel = BABYLON.MeshBuilder.CreatePlane("greenTeamLabel", {width:0.32, height:0.10}, scene);
-            greenTeamLabel.position = new BABYLON.Vector3(field_length/2 + 0.25, 0.10, 0); // à l'extérieur du terrain, côté droit
+            const tex = new BABYLON.DynamicTexture("greenTeamTex", {width:512, height:128}, scene, false);
+            tex.hasAlpha = true;
+            const mat = new BABYLON.StandardMaterial("greenTeamMat", scene);
+            mat.diffuseTexture = tex;
+            mat.emissiveColor = new BABYLON.Color3(1,1,1);
+            mat.specularColor = new BABYLON.Color3(0,0,0);
+            mat.backFaceCulling = false;
+            greenTeamLabel = BABYLON.MeshBuilder.CreatePlane("greenTeamLabel", {width:0.55, height:0.13}, scene);
+            greenTeamLabel.material = mat;
+            greenTeamLabel.position.x = -field_length/2 - teamZoneLength/2 - 0.01;
+            greenTeamLabel.position.y = 0.13;
+            greenTeamLabel.position.z = field_width/2 + 0.18; // aligné avec VS
             greenTeamLabel.rotation.x = Math.PI/2;
-            greenTeamLabel.material = new BABYLON.StandardMaterial("greenTeamLabelMat", scene);
-            greenTeamLabel.material.diffuseTexture = new BABYLON.DynamicTexture("greenTeamLabelTex", {width:512, height:128}, scene, true);
-            greenTeamLabel.material.diffuseTexture.hasAlpha = true;
-            greenTeamLabel.material.emissiveColor = new BABYLON.Color3(1,1,1);
-            greenTeamLabel.material.specularColor = new BABYLON.Color3(0,0,0);
-            greenTeamLabel.material.backFaceCulling = false;
+            greenTeamLabel.parent = root;
+        }
+        // VS label (center, outside field)
+        if (!vsLabel) {
+            const tex = new BABYLON.DynamicTexture("vsTex", {width:256, height:128}, scene, false);
+            tex.hasAlpha = true;
+            const mat = new BABYLON.StandardMaterial("vsMat", scene);
+            mat.diffuseTexture = tex;
+            mat.emissiveColor = new BABYLON.Color3(1,1,1);
+            mat.specularColor = new BABYLON.Color3(0,0,0);
+            mat.backFaceCulling = false;
+            vsLabel = BABYLON.MeshBuilder.CreatePlane("vsLabel", {width:0.22, height:0.13}, scene);
+            vsLabel.material = mat;
+            vsLabel.position.x = 0;
+            vsLabel.position.y = 0.13;
+            vsLabel.position.z = field_width/2 + 0.18; // Just above the field
+            vsLabel.rotation.x = Math.PI/2;
+            vsLabel.parent = root;
         }
         // Texte par défaut
-        updateTeamLabels({blue_team_name: "Bleu", green_team_name: "Vert"});
+        updateTeamLabels({blue_team_name: "Bleu", green_team_name: "Vert", blue_score: 0, green_score: 0});
     }
     function updateTeamLabels(data) {
-        if (!blueTeamLabel || !greenTeamLabel) return;
+        if (!blueTeamLabel || !greenTeamLabel || !vsLabel) return;
+        // Blue label: name + score
         const blueTex = blueTeamLabel.material.diffuseTexture;
         blueTex.getContext().clearRect(0,0,512,128);
-        blueTex.drawText(data.blue_team_name || "Bleu", 24, 96, "bold 80px Arial", "#fff", "#1a4", true);
+        blueTex.drawText(
+            (data.blue_team_name || "Bleu") + "  " + (data.blue_score !== undefined ? data.blue_score : "0"),
+            24, 96, "bold 80px Arial", "#fff", "#1a4", true
+        );
         blueTex.update();
+        // Green label: name + score
         const greenTex = greenTeamLabel.material.diffuseTexture;
         greenTex.getContext().clearRect(0,0,512,128);
-        greenTex.drawText(data.green_team_name || "Vert", 24, 96, "bold 80px Arial", "#fff", "#1a4", true);
+        greenTex.drawText(
+            (data.green_team_name || "Vert") + "  " + (data.green_score !== undefined ? data.green_score : "0"),
+            24, 96, "bold 80px Arial", "#fff", "#1a4", true
+        );
         greenTex.update();
+        // VS label
+        const vsTex = vsLabel.material.diffuseTexture;
+        vsTex.getContext().clearRect(0,0,256,128);
+        vsTex.drawText("VS", 70, 96, "bold 90px Arial", "#fff", "#1976d2", true);
+        vsTex.update();
     }
     // Création immédiate des labels au chargement de la scène
     createTeamLabels();
-    // --- Historique et replay ---
-    let history = [];
-    let isRecording = false;
-    let replayInterval = null;
-    const MAX_HISTORY = 600; // ~20s à 30 FPS
-
-    document.getElementById('record-btn').onclick = function() {
-        isRecording = !isRecording;
-        this.textContent = isRecording ? 'Enregistrement...' : 'Enregistrer';
-        if (!isRecording) history = [];
-    };
-    document.getElementById('replay-btn').onclick = function() {
-        if (history.length === 0) return;
-        let i = 0;
-        clearInterval(replayInterval);
-        replayInterval = setInterval(() => {
-            if (i >= history.length) { clearInterval(replayInterval); return; }
-            updateObjects(history[i]);
-            updateInfos(history[i]);
-            i++;
-        }, 33); // ~30 FPS
-    };
-    // --- Export CSV ---
-    document.getElementById('export-btn').onclick = function() {
-        if (history.length === 0) return;
-        let csv = 't,ball_x,ball_y,blue1_x,blue1_y,blue1_a,blue2_x,blue2_y,blue2_a,green1_x,green1_y,green1_a,green2_x,green2_y,green2_a\n';
-        history.forEach((d, idx) => {
-            csv += `${idx},${d.ball[0]},${d.ball[1]},${d.blue1[0]},${d.blue1[1]},${d.blue1[2]},${d.blue2[0]},${d.blue2[1]},${d.blue2[2]},${d.green1[0]},${d.green1[1]},${d.green1[2]},${d.green2[0]},${d.green2[1]},${d.green2[2]}\n`;
-        });
-        const blob = new Blob([csv], {type: 'text/csv'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'replay.csv';
-        a.click();
-        URL.revokeObjectURL(url);
-    };
+    // --- Suppression des fonctions d'enregistrement, replay et export CSV ---
     // --- Plein écran et options caméra ---
     document.getElementById('fullscreen-btn').onclick = function() {
         if (canvas.requestFullscreen) canvas.requestFullscreen();
@@ -732,37 +692,13 @@
     // Ajout du zoom à la molette
     canvas.addEventListener('wheel', function(e) {
         e.preventDefault();
-        camera.radius += e.deltaY * 0.002;
+        camera.radius += e.deltaY * 0.0007; // Zoom plus doux (réduction du facteur)
         if (camera.radius < 0.5) camera.radius = 0.5;
         if (camera.radius > 10) camera.radius = 10;
     }, {passive:false});
     // Rotation libre déjà activée par Babylon.js (drag souris)
-    // --- Ajout à l'historique si enregistrement actif ---
-    const oldUpdateObjects = updateObjects;
-    updateObjects = function(data) {
-        if (isRecording) {
-            if (history.length > MAX_HISTORY) history.shift();
-            history.push(JSON.parse(JSON.stringify(data)));
-        }
-        oldUpdateObjects(data);
-    };
-    // --- Téléportation de la balle par clic sur le terrain ---
-    // Correction : utiliser scene.pick avec pointerX/pointerY de l'événement Babylon.js
-    canvas.addEventListener('pointerdown', function(evt) {
-        // Utiliser les coordonnées relatives au canvas ET tenir compte du scroll
-        const x = evt.clientX - canvas.getBoundingClientRect().left;
-        const y = evt.clientY - canvas.getBoundingClientRect().top;
-        // Utiliser engine.getRenderWidth/Height pour normaliser
-        const pickResult = scene.pick(x * engine.getRenderWidth() / canvas.width, y * engine.getRenderHeight() / canvas.height);
-        if (pickResult && pickResult.hit && pickResult.pickedMesh && pickResult.pickedMesh.name === 'ground') {
-            const picked = pickResult.pickedPoint;
-            fetch('/teleporte_ball', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({x: picked.x, y: picked.z})
-            });
-        }
-    });
+    // --- Appliquer la rotation globale de 180° autour de l'axe Y ---
+    root.rotation = new BABYLON.Vector3(0, Math.PI, 0);
     </script>
 </body>
 </html>
