@@ -3,702 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terrain 3D - Coordonnées en temps réel</title>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <title>Sélection du terrain</title>
+    <!--<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">-->
     <style>
         body {
-            background: linear-gradient(120deg, #e3f2fd 60%, #f8f8f8 100%);
-            font-family: 'Segoe UI', 'Arial', sans-serif;
             margin: 0;
+            padding: 0;
             min-height: 100vh;
-        }
-        header {
-            width: 100vw;
-            background: linear-gradient(90deg, #1976d2 60%, #64b5f6 100%);
-            box-shadow: 0 4px 24px #1976d233;
-            padding: 0 0 18px 0;
-            border-radius: 0 0 32px 32px;
+            background: linear-gradient(135deg, rgba(245,247,250,0.7) 0%, rgba(195,207,226,0.7) 0%), url('../static/img/cover-2022.jpg') center center/cover no-repeat fixed;
+            font-family: 'Montserrat', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         h1 {
-            text-align: center;
-            color: #fff;
-            font-size: 2.5em;
-            margin: 0;
-            padding: 32px 0 10px 0;
-            letter-spacing: 1.5px;
-            text-shadow: 0 2px 12px #1976d288;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2d3a4b;
+            margin-bottom: 2rem;
+            letter-spacing: 1px;
         }
-        #view-buttons, .config-bar {
-            margin: 0 auto 18px auto;
-            text-align: center;
+        .container {
             display: flex;
-            gap: 18px;
+            gap: 2rem;
+            flex-wrap: wrap;
             justify-content: center;
-            width: fit-content;
         }
-        #view-buttons button, .config-bar button {
-            background: linear-gradient(90deg, #1976d2 60%, #64b5f6 100%);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 12px 28px;
-            font-size: 1.12em;
-            font-weight: 600;
-            box-shadow: 0 2px 12px #1976d233;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-        }
-        #view-buttons button:hover, .config-bar button:hover {
-            background: linear-gradient(90deg, #1565c0 60%, #4fc3f7 100%);
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 4px 18px #1976d244;
-        }
-        select, #goto-config-select, #goto-config-select-2 {
-            background: #f5faff;
-            border: 1.5px solid #90caf9;
-            border-radius: 10px;
-            padding: 10px 20px;
-            font-size: 1.08em;
-            color: #1976d2;
-            font-weight: 500;
-            box-shadow: 0 2px 8px #1976d211;
-            transition: border 0.2s, box-shadow 0.2s;
-        }
-        select:focus {
-            border: 2px solid #1976d2;
-            outline: none;
-            box-shadow: 0 0 0 3px #1976d222;
-        }
-        #terrain3d {
-            width: 1000px;
-            height: 650px;
-            display: block;
-            border: 3px solid #1a237e;
-            background: linear-gradient(135deg, #e0ffe0 60%, #b3e5fc 100%);
-            margin: 30px auto 20px auto;
-            box-shadow: 0 12px 40px #1976d244, 0 1.5px 0 #fff8 inset;
-            border-radius: 22px;
-            transition: box-shadow 0.3s, border 0.2s;
-        }
-        #terrain3d:focus, #terrain3d:hover {
-            box-shadow: 0 0 0 6px #1976d2aa, 0 12px 40px #1976d244;
-            outline: none;
-            border: 3px solid #64b5f6;
-        }
-        #infos-math {
+        .card {
             background: #fff;
-            border-radius: 18px;
-            box-shadow: 0 4px 24px #1976d211;
-            max-width: 520px;
-            margin: 36px auto 36px auto;
-            padding: 28px 38px 22px 38px;
-            border: 2px solid #90caf9;
-            font-size: 1.08em;
-        }
-        #infos-math h2 {
-            color: #1976d2;
-            font-size: 1.35em;
-            margin-bottom: 14px;
-            letter-spacing: 0.5px;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(44, 62, 80, 0.08);
+            padding: 2.5rem 2rem;
+            min-width: 220px;
             text-align: center;
-            text-shadow: 0 1px 6px #1976d211;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: #2d3a4b;
+            border: 2px solid transparent;
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-size: 1.1rem;
         }
-        #coords ul {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 10px 0;
+        .card:hover {
+            transform: translateY(-8px) scale(1.04);
+            box-shadow: 0 16px 32px rgba(44, 62, 80, 0.13);
+            border-color: #4e8cff;
         }
-        #coords li {
-            margin-bottom: 7px;
-            font-size: 1.13em;
-            color: #263238;
-            padding-left: 0.7em;
-            letter-spacing: 0.2px;
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
         }
-        #trajectoires {
-            font-size: 1.04em;
-            color: #1565c0;
-            margin-top: 10px;
-            text-align: center;
-        }
-        .footer-signature {
-            text-align: center;
-            color: #1976d2;
-            font-size: 1.08em;
-            margin: 40px 0 18px 0;
-            opacity: 0.7;
-            letter-spacing: 0.5px;
-        }
-        @media (max-width: 1100px) {
-            #terrain3d {
-                width: 98vw;
-                height: 54vw;
-                min-height: 350px;
-                max-width: 99vw;
-            }
-            #infos-math {
-                max-width: 98vw;
-                padding: 12px 6vw 12px 6vw;
-            }
+        .card-desc {
+            font-size: 1rem;
+            color: #5a6a85;
         }
         @media (max-width: 700px) {
-            h1 {
-                font-size: 1.5em;
-                padding: 18px 0 6px 0;
-            }
-            #terrain3d {
-                height: 48vw;
-                min-height: 180px;
-            }
-            #infos-math {
-                font-size: 0.98em;
-                padding: 10px 2vw 10px 2vw;
-            }
-            #view-buttons, .config-bar {
+            .container {
                 flex-direction: column;
-                gap: 10px;
+                gap: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="config-bar">
-            <button onclick="setView('reset')">Reset</button>
-            <!-- Suppression du select et du bouton goto-config -->
-            <button id="fullscreen-btn">Plein écran</button>
-            <button onclick="setView('top')">Vue du dessus</button>
-            <button onclick="setView('side')">Vue latérale</button>
-            <button onclick="setView('perspective')">Perspective</button>
-        </div>
-    </header>
-    <canvas id="terrain3d" tabindex="0"></canvas>
-    <div id="animation-overlay"></div>
-    <footer>
-        <p class="footer-signature">Développé par Samuel Legrand - 2025</p>
-    </footer>
-    <style>
-        #animation-overlay {
-            position: fixed;
-            left: 0; top: 0; width: 100vw; height: 100vh;
-            pointer-events: none;
-            z-index: 1000;
-        }
-        .goal-flash {
-            animation: goalFlash 1.2s cubic-bezier(.4,0,.2,1);
-            background: radial-gradient(circle at 50% 50%, #fffbe6 0%, #ffe082 60%, #ff9800cc 100%);
-            opacity: 0.85;
-        }
-        .goal-text {
-            position: absolute;
-            left: 50%; top: 30%;
-            transform: translate(-50%, -50%);
-            font-size: 3.2em;
-            color: #ff9800;
-            font-weight: bold;
-            text-shadow: 0 4px 24px #ff980088, 0 1px 0 #fff8 inset;
-            opacity: 0.95;
-            animation: goalTextPop 1.2s cubic-bezier(.4,0,.2,1);
-        }
-        @keyframes goalFlash {
-            0% { opacity: 0; }
-            10% { opacity: 0.85; }
-            80% { opacity: 0.85; }
-            100% { opacity: 0; }
-        }
-        @keyframes goalTextPop {
-            0% { opacity: 0; transform: translate(-50%,-50%) scale(0.7); }
-            20% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
-            60% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-            100% { opacity: 0; transform: translate(-50%,-50%) scale(1); }
-        }
-        .view-transition {
-            animation: viewFade 0.7s cubic-bezier(.4,0,.2,1);
-            background: linear-gradient(120deg, #e3f2fd 60%, #f8f8f8 100%);
-            opacity: 0.7;
-        }
-        @keyframes viewFade {
-            0% { opacity: 0; }
-            30% { opacity: 0.7; }
-            100% { opacity: 0; }
-        }
-    </style>
-    <script>
-    // --- Constantes physiques du terrain et objets (en mètres) ---
-    const field_length = 1.84;
-    const field_width = 1.23;
-    const goal_width = 0.6;
-    const goal_virtual_height = 0.1;
-    const border_size = 0.3;
-    const robot_radius = 0.088;
-    const robot_height = 0.076;
-    const ball_radius = 0.021;
-    const ball_height = 0.021;
-    // --- Initialisation Babylon.js ---
-    const canvas = document.getElementById("terrain3d");
-    const engine = new BABYLON.Engine(canvas, true);
-    const scene = new BABYLON.Scene(engine);
-    // Racine pour rotation globale
-    const root = new BABYLON.TransformNode("root", scene);
-    // Camera orbitale
-    const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI/2, Math.PI/2.5, 2.5, new BABYLON.Vector3(0,0,0), scene);
-    camera.attachControl(canvas, true);
-    // Lumière
-    const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
-    // Sol (terrain) avec plus de subdivisions pour une meilleure interpolation
-    const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:field_length, height:field_width, subdivisions: 8}, scene);
-    ground.position.y = 0;
-    ground.parent = root;
-    const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
-    // Texture d'herbe libre de droits (Three.js CDN, hotlink autorisé)
-    const grassTex = new BABYLON.Texture("https://threejs.org/examples/textures/terrain/grasslight-big.jpg", scene);
-    groundMat.diffuseTexture = grassTex;
-    groundMat.diffuseTexture.uScale = 4;
-    groundMat.diffuseTexture.vScale = 4;
-    groundMat.specularColor = new BABYLON.Color3(0, 0, 0); // Suppression du reflet
-    groundMat.emissiveColor = new BABYLON.Color3(0, 0, 0); // Pas d'émissif
-    groundMat.alpha = 1.0;
-    groundMat.roughness = 1.0;
-    groundMat.useGlossinessFromSpecularMapAlpha = false;
-    groundMat.freeze();
-    ground.material = groundMat;
-    // Ajout d'un contour blanc épais autour du terrain
-    const outline = BABYLON.MeshBuilder.CreateLines("fieldOutline", {
-        points: [
-            new BABYLON.Vector3(-field_length/2, 0.015, -field_width/2),
-            new BABYLON.Vector3(field_length/2, 0.015, -field_width/2),
-            new BABYLON.Vector3(field_length/2, 0.015, field_width/2),
-            new BABYLON.Vector3(-field_length/2, 0.015, field_width/2),
-            new BABYLON.Vector3(-field_length/2, 0.015, -field_width/2)
-        ],
-        updatable: false
-    }, scene);
-    outline.color = new BABYLON.Color3(1,1,1);
-    outline.enableEdgesRendering();
-    outline.edgesWidth = 8;
-    outline.parent = root;
-    // Ajout de lignes blanches pour marquage terrain
-    function createFieldLines() {
-        // Rectangle principal
-        BABYLON.MeshBuilder.CreateLines("fieldRect", {
-            points: [
-                new BABYLON.Vector3(-field_length/2, 0.011, -field_width/2),
-                new BABYLON.Vector3(field_length/2, 0.011, -field_width/2),
-                new BABYLON.Vector3(field_length/2, 0.011, field_width/2),
-                new BABYLON.Vector3(-field_length/2, 0.011, field_width/2),
-                new BABYLON.Vector3(-field_length/2, 0.011, -field_width/2)
-            ],
-            updatable: false
-        }, scene).color = new BABYLON.Color3(1,1,1);
-        // Ligne médiane
-        BABYLON.MeshBuilder.CreateLines("midLine", {
-            points: [
-                new BABYLON.Vector3(0, 0.012, -field_width/2),
-                new BABYLON.Vector3(0, 0.012, field_width/2)
-            ]
-        }, scene).color = new BABYLON.Color3(1,1,1);
-        // Cercle central
-        BABYLON.MeshBuilder.CreateDashedLines("centerCircle", {
-            points: Array.from({length: 65}, (_,i) => {
-                const theta = 2*Math.PI*i/64;
-                return new BABYLON.Vector3(0.0 + 0.18*Math.cos(theta), 0.013, 0.0 + 0.18*Math.sin(theta));
-            }),
-            dashSize: 0.04, gapSize: 0.02, updatable: false
-        }, scene).color = new BABYLON.Color3(1,1,1);
-      
-        // Surfaces de réparation
-        const areaW = 0.9, areaL = 0.3;
-        // Zone gauche (côté -field_length/2)
-        BABYLON.MeshBuilder.CreateLines("area1", {
-            points: [
-                new BABYLON.Vector3(-field_length/2, 0.011, -0.45),
-                new BABYLON.Vector3(-field_length/2+areaL, 0.011, -0.45),
-                new BABYLON.Vector3(-field_length/2+areaL, 0.011, 0.45),
-                new BABYLON.Vector3(-field_length/2, 0.011, 0.45),
-                new BABYLON.Vector3(-field_length/2, 0.011, -0.45)
-            ],
-            updatable: false
-        }, scene).color = new BABYLON.Color3(1,1,1);
-        // Zone droite (côté +field_length/2)
-        BABYLON.MeshBuilder.CreateLines("area2", {
-            points: [
-                new BABYLON.Vector3(field_length/2, 0.011, -0.45),
-                new BABYLON.Vector3(field_length/2-areaL, 0.011, -0.45),
-                new BABYLON.Vector3(field_length/2-areaL, 0.011, 0.45),
-                new BABYLON.Vector3(field_length/2, 0.011, 0.45),
-                new BABYLON.Vector3(field_length/2, 0.011, -0.45)
-            ],
-            updatable: false
-        }, scene).color = new BABYLON.Color3(1,1,1);
-    }
-    createFieldLines();
-    // Bordure (carpet)
-    const border = BABYLON.MeshBuilder.CreateGround("border", {width:field_length+2*border_size, height:field_width+2*border_size, subdivisions: 2}, scene);
-    border.position.y = -0.002;
-    border.parent = root;
-    const borderMat = new BABYLON.StandardMaterial("borderMat", scene);
-    borderMat.diffuseColor = new BABYLON.Color3(0.11, 0.36, 0.11);
-    borderMat.specularColor = new BABYLON.Color3(0.1,0.2,0.1);
-    borderMat.alpha = 0.98;
-    border.material = borderMat;
-    // Amélioration de la lumière
-    light.intensity = 1.22;
-    light.diffuse = new BABYLON.Color3(1,1,1);
-    light.specular = new BABYLON.Color3(0.5,0.5,0.5);
-    // Ajout d'une lumière directionnelle douce pour relief
-    const dirLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(-0.5,-1,-0.5), scene);
-    dirLight.intensity = 0.32;
-    dirLight.diffuse = new BABYLON.Color3(1,1,1);
-    dirLight.specular = new BABYLON.Color3(0.7,0.7,0.7);
-    // Désactiver le brouillard si besoin pour plus de fluidité
-    // scene.fogMode = BABYLON.Scene.FOGMODE_NONE;
-    // Buts
-    function createGoal(x, color) {
-        const y1 = -goal_width/2;
-        const y2 = goal_width/2;
-        // Poteaux
-        const post1 = BABYLON.MeshBuilder.CreateBox("post1", {height:goal_virtual_height, width:0.02, depth:0.02}, scene);
-        post1.position = new BABYLON.Vector3(x, goal_virtual_height/2, y1);
-        post1.material = new BABYLON.StandardMaterial("postMat1", scene);
-        post1.material.diffuseColor = color;
-        post1.parent = root;
-        const post2 = BABYLON.MeshBuilder.CreateBox("post2", {height:goal_virtual_height, width:0.02, depth:0.02}, scene);
-        post2.position = new BABYLON.Vector3(x, goal_virtual_height/2, y2);
-        post2.material = new BABYLON.StandardMaterial("postMat2", scene);
-        post2.material.diffuseColor = color;
-        post2.parent = root;
-        // Barre transversale
-        const bar = BABYLON.MeshBuilder.CreateBox("bar", {height:0.02, width:0.02, depth:goal_width}, scene);
-        bar.position = new BABYLON.Vector3(x, goal_virtual_height, 0);
-        bar.material = new BABYLON.StandardMaterial("barMat", scene);
-        bar.material.diffuseColor = color;
-        bar.parent = root;
-    }
-    // Inversion des couleurs : but bleu à gauche, but vert à droite
-    createGoal(field_length/2, new BABYLON.Color3(0,1,0)); // But vert à droite
-    createGoal(-field_length/2, new BABYLON.Color3(0,0,1)); // But bleu à gauche
-    // Ajout d'une zone verte unie derrière chaque but pour afficher le nom d'équipe
-    const teamZoneLength = 0.18;
-    const teamZoneHeight = field_width;
-    // Zone bleue (côté bleu, à droite)
-    const blueZone = BABYLON.MeshBuilder.CreateGround("blueZone", {
-        width: teamZoneLength,
-        height: teamZoneHeight,
-        subdivisions: 1
-    }, scene);
-    blueZone.position.x = field_length/2 + teamZoneLength/2 + 0.01;
-    blueZone.position.y = 0.012;
-    blueZone.material = new BABYLON.StandardMaterial("blueZoneMat", scene);
-    blueZone.material.diffuseColor = new BABYLON.Color3(0.1, 0.3, 0.1); // Vert uni
-    blueZone.material.specularColor = new BABYLON.Color3(0,0,0);
-    blueZone.parent = root;
-    // Zone verte (côté vert, à gauche)
-    const greenZone = BABYLON.MeshBuilder.CreateGround("greenZone", {
-        width: teamZoneLength,
-        height: teamZoneHeight,
-        subdivisions: 1
-    }, scene);
-    greenZone.position.x = -field_length/2 - teamZoneLength/2 - 0.01;
-    greenZone.position.y = 0.012;
-    greenZone.material = new BABYLON.StandardMaterial("greenZoneMat", scene);
-    greenZone.material.diffuseColor = new BABYLON.Color3(0.1, 0.3, 0.1); // Vert uni
-    greenZone.material.specularColor = new BABYLON.Color3(0,0,0);
-    greenZone.parent = root;
-    // --- Objets dynamiques (robots, balle) ---
-    function createFlatFrontRobot(name, color, scene, number) {
-        // Corps principal (cylindre)
-        const body = BABYLON.MeshBuilder.CreateCylinder(name + "_body", {
-            diameter: robot_radius*1 ,
-            height: robot_height,
-            tessellation: 48
-        }, scene);
-        // Plat avant (boîte fine)
-        const flat = BABYLON.MeshBuilder.CreateBox(name + "_flat", {
-            width: robot_radius * 1.1,
-            height: robot_height * 1.01,
-            depth: robot_radius * 1
-
-        }, scene);
-        flat.position.z = robot_radius * 0.5;
-        // Même couleur
-        const mat = new BABYLON.StandardMaterial(name + "mat", scene);
-        mat.diffuseColor = color;
-        body.material = mat;
-        flat.material = mat;
-        // Numéro (plan avec texture dynamique)
-        const dynTex = new BABYLON.DynamicTexture(name + "_numtex", {width:128, height:128}, scene, false);
-        dynTex.hasAlpha = true;
-        dynTex.drawText(number.toString(), 64, 90, "bold 90px Arial", "#fff", "#222", true);
-        const numMat = new BABYLON.StandardMaterial(name + "_nummat", scene);
-        numMat.diffuseTexture = dynTex;
-        numMat.emissiveColor = new BABYLON.Color3(1,1,1);
-        numMat.specularColor = new BABYLON.Color3(0,0,0);
-        numMat.backFaceCulling = false;
-        const numPlane = BABYLON.MeshBuilder.CreatePlane(name + "_num", {
-            width: robot_radius*1, height: robot_height*1.2
-        }, scene);
-        numPlane.material = numMat;
-        numPlane.position.z = robot_radius * 1; // bien devant le plat
-        numPlane.position.y = robot_height *0.55; // à mi-hauteur
-        numPlane.rotation.x = Math.PI/2;
-        // Grouper
-        const robot = BABYLON.Mesh.MergeMeshes([body, flat, numPlane], true, false, undefined, false, true);
-        robot.parent = root;
-        return robot;
-    }
-    const robots = {
-        blue1: createFlatFrontRobot("blue1", new BABYLON.Color3(0,0,1), scene, 1),
-        blue2: createFlatFrontRobot("blue2", new BABYLON.Color3(0,0,1), scene, 2),
-        green1: createFlatFrontRobot("green1", new BABYLON.Color3(0,1,0), scene, 1),
-        green2: createFlatFrontRobot("green2", new BABYLON.Color3(0,1,0), scene, 2),
-    };
-    // Balle
-    const ball = BABYLON.MeshBuilder.CreateSphere("ball", {diameter:ball_radius*2}, scene);
-    ball.position.y = ball_radius;
-    ball.material = new BABYLON.StandardMaterial("ballmat", scene);
-    ball.material.diffuseColor = new BABYLON.Color3(1,0,0);
-    ball.parent = root;
-    // --- Points fixes et surbrillance ---
-    const fixedPoints = {};
-    const highlightCircle = BABYLON.MeshBuilder.CreateTorus('highlightCircle', {
-        diameter: 0.11, thickness: 0.018, tessellation: 48
-    }, scene);
-    highlightCircle.position.y = 0.035;
-    highlightCircle.isVisible = false;
-    highlightCircle.material = new BABYLON.StandardMaterial('highlightMat', scene);
-    highlightCircle.material.emissiveColor = new BABYLON.Color3(1, 0.85, 0.2);
-    highlightCircle.material.alpha = 0.85;
-    highlightCircle.material.specularColor = new BABYLON.Color3(1, 0.9, 0.3);
-    highlightCircle.material.wireframe = false;
-    highlightCircle.parent = root;
-
-    const pointCoords = {
-        point1: [0.45, 0.3],
-        point2: [-0.45, 0.3],
-        point3: [-0.45, -0.3],
-        point4: [0.45, -0.3]
-    };
-    for (const [name, [x, y]] of Object.entries(pointCoords)) {
-        const mesh = BABYLON.MeshBuilder.CreateSphere(name, {diameter: 0.055, segments: 32}, scene);
-        mesh.position = new BABYLON.Vector3(x, 0.028, y);
-        mesh.material = new BABYLON.StandardMaterial(name+'mat', scene);
-        mesh.material.diffuseColor = new BABYLON.Color3(1, 0.85, 0.2);
-        mesh.material.emissiveColor = new BABYLON.Color3(1, 0.85, 0.2);
-        mesh.material.specularColor = new BABYLON.Color3(1, 0.9, 0.3);
-        mesh.material.alpha = 0.92;
-        fixedPoints[name] = mesh;
-        // Ajout d'une ombre douce
-        mesh.receiveShadows = true;
-        mesh.parent = root;
-    }
-
-    // --- Animation et update ---
-    function updateObjects(data) {
-        robots.blue1.position = new BABYLON.Vector3(data.blue1[0], robot_height/2, data.blue1[1]);
-        robots.blue2.position = new BABYLON.Vector3(data.blue2[0], robot_height/2, data.blue2[1]);
-        robots.green1.position = new BABYLON.Vector3(data.green1[0], robot_height/2, data.green1[1]);
-        robots.green2.position = new BABYLON.Vector3(data.green2[0], robot_height/2, data.green2[1]);
-        ball.position = new BABYLON.Vector3(data.ball[0], ball_radius, data.ball[1]);
-        // Orientation des robots (optionnel)
-        robots.blue1.rotation.y = -data.blue1[2] + Math.PI/2;
-        robots.blue2.rotation.y = -data.blue2[2] + Math.PI/2;
-        robots.green1.rotation.y = -data.green1[2] + Math.PI/2;
-        robots.green2.rotation.y = -data.green2[2] + Math.PI/2;
-        // --- Suppression du tracé des trajectoires ---
-        checkGoal(data);
-        // --- Points fixes highlight ---
-        if (data.highlight_point && fixedPoints[data.highlight_point]) {
-            highlightCircle.isVisible = true;
-            highlightCircle.position.x = fixedPoints[data.highlight_point].position.x;
-            highlightCircle.position.z = fixedPoints[data.highlight_point].position.z;
-        } else {
-            highlightCircle.isVisible = false;
-        }
-        updateTeamLabels(data);
-    }
-
-    engine.runRenderLoop(function () {
-        scene.render();
-    });
-    window.addEventListener("resize", function () {
-        engine.resize();
-    });
-    // --- SocketIO ---
-    const socket = io();
-    socket.on('update_coordinates', function(data) {
-        updateObjects(data);
-        updateInfos(data);
-    });
-    // --- Changement de vue ---
-    window.setView = function(view) {
-        showViewTransition();
-        if (view === 'top') {
-            camera.setPosition(new BABYLON.Vector3(0, 2, 0));
-            camera.setTarget(BABYLON.Vector3.Zero());
-        } else if (view === 'side') {
-            camera.setPosition(new BABYLON.Vector3(0, 0.3, 2));
-            camera.setTarget(BABYLON.Vector3.Zero());
-        } else if (view === 'perspective') {
-            camera.setPosition(new BABYLON.Vector3(2.5, 1.5, 2.5));
-            camera.setTarget(BABYLON.Vector3.Zero());
-        } else if (view === 'reset') {
-            camera.setPosition(new BABYLON.Vector3(0, 1.5, 3.5));
-            camera.setTarget(BABYLON.Vector3.Zero());
-        }
-    }
-    // --- Fonctions existantes (infos math) ---
-    function radToDeg(rad) {
-        return rad * 180 / Math.PI;
-    }
-    function degToRad(deg) {
-        return deg * Math.PI / 180;
-    }
-    function updateInfos(data) {
-        let html = '<ul>';
-        html += `<li>Balle : (${data.ball[0].toFixed(3)}, ${data.ball[1].toFixed(3)})</li>`;
-        html += `<li>Bleu 1 : (${data.blue1[0].toFixed(3)}, ${data.blue1[1].toFixed(3)}), angle = ${(radToDeg(data.blue1[2])).toFixed(1)}°</li>`;
-        html += `<li>Bleu 2 : (${data.blue2[0].toFixed(3)}, ${data.blue2[1].toFixed(3)}), angle = ${(radToDeg(data.blue2[2])).toFixed(1)}°</li>`;
-        html += `<li>Vert 1 : (${data.green1[0].toFixed(3)}, ${data.green1[1].toFixed(3)}), angle = ${(radToDeg(data.green1[2])).toFixed(1)}°</li>`;
-        html += `<li>Vert 2 : (${data.green2[0].toFixed(3)}, ${data.green2[1].toFixed(3)}), angle = ${(radToDeg(data.green2[2])).toFixed(1)}°</li>`;
-        html += '</ul>';
-        document.getElementById('coords').innerHTML = html;
-    }
-    document.getElementById('fullscreen-btn').onclick = function() {
-        if (canvas.requestFullscreen) canvas.requestFullscreen();
-        else if (canvas.webkitRequestFullscreen) canvas.webkitRequestFullscreen();
-        else if (canvas.msRequestFullscreen) canvas.msRequestFullscreen();
-    };
-    // --- Animation de but ---
-    let lastGoal = null;
-    function checkGoal(data) {
-        const x = data.ball[0], y = data.ball[1];
-        const goalX = field_length/2, goalY = goal_width/2;
-        let goal = null;
-        if (x > goalX-0.003 && Math.abs(y) < goalY) goal = 'But BLEU !';
-        if (x < -goalX+0.003 && Math.abs(y) < goalY) goal = 'But VERT !';
-        if (goal && lastGoal !== goal) {
-            showGoalAnimation(goal);
-            lastGoal = goal;
-            setTimeout(()=>{ lastGoal = null; }, 1200);
-        }
-    }
-    function showGoalAnimation(text) {
-        const overlay = document.getElementById('animation-overlay');
-        overlay.innerHTML = `<div class='goal-flash'></div><div class='goal-text'>${text}</div>`;
-        setTimeout(()=>{ overlay.innerHTML = ''; }, 1200);
-    }
-    // --- Animation de transition de vue ---
-    function showViewTransition() {
-        const overlay = document.getElementById('animation-overlay');
-        overlay.innerHTML = `<div class='view-transition' style='width:100vw;height:100vh;position:fixed;left:0;top:0;'></div>`;
-        setTimeout(()=>{ overlay.innerHTML = ''; }, 700);
-    }
-    // --- Ajout d'un effet de glow pour les points fixes et le cercle ---
-    const gl = new BABYLON.GlowLayer('glow', scene, {blurKernelSize: 32});
-    gl.intensity = 0.7;
-    gl.addIncludedOnlyMesh(highlightCircle);
-    Object.values(fixedPoints).forEach(mesh => gl.addIncludedOnlyMesh(mesh));
-    // --- Affichage dynamique des noms d'équipe et scores ---
-    let blueTeamLabel, greenTeamLabel, vsLabel;
-    function createTeamLabels() {
-        // Blue team label (right, outside field)
-        if (!blueTeamLabel) {
-            const tex = new BABYLON.DynamicTexture("blueTeamTex", {width:512, height:128}, scene, false);
-            tex.hasAlpha = true;
-            const mat = new BABYLON.StandardMaterial("blueTeamMat", scene);
-            mat.diffuseTexture = tex;
-            mat.emissiveColor = new BABYLON.Color3(1,1,1);
-            mat.specularColor = new BABYLON.Color3(0,0,0);
-            mat.backFaceCulling = false;
-            blueTeamLabel = BABYLON.MeshBuilder.CreatePlane("blueTeamLabel", {width:0.55, height:0.13}, scene);
-            blueTeamLabel.material = mat;
-            blueTeamLabel.position.x = field_length/2 + teamZoneLength/2 + 0.01;
-            blueTeamLabel.position.y = 0.13;
-            blueTeamLabel.position.z = field_width/2 + 0.18; // aligné avec VS
-            blueTeamLabel.rotation.x = Math.PI/2;
-            blueTeamLabel.parent = root;
-        }
-        // Green team label (left, outside field)
-        if (!greenTeamLabel) {
-            const tex = new BABYLON.DynamicTexture("greenTeamTex", {width:512, height:128}, scene, false);
-            tex.hasAlpha = true;
-            const mat = new BABYLON.StandardMaterial("greenTeamMat", scene);
-            mat.diffuseTexture = tex;
-            mat.emissiveColor = new BABYLON.Color3(1,1,1);
-            mat.specularColor = new BABYLON.Color3(0,0,0);
-            mat.backFaceCulling = false;
-            greenTeamLabel = BABYLON.MeshBuilder.CreatePlane("greenTeamLabel", {width:0.55, height:0.13}, scene);
-            greenTeamLabel.material = mat;
-            greenTeamLabel.position.x = -field_length/2 - teamZoneLength/2 - 0.01;
-            greenTeamLabel.position.y = 0.13;
-            greenTeamLabel.position.z = field_width/2 + 0.18; // aligné avec VS
-            greenTeamLabel.rotation.x = Math.PI/2;
-            greenTeamLabel.parent = root;
-        }
-        // VS label (center, outside field)
-        if (!vsLabel) {
-            const tex = new BABYLON.DynamicTexture("vsTex", {width:256, height:128}, scene, false);
-            tex.hasAlpha = true;
-            const mat = new BABYLON.StandardMaterial("vsMat", scene);
-            mat.diffuseTexture = tex;
-            mat.emissiveColor = new BABYLON.Color3(1,1,1);
-            mat.specularColor = new BABYLON.Color3(0,0,0);
-            mat.backFaceCulling = false;
-            vsLabel = BABYLON.MeshBuilder.CreatePlane("vsLabel", {width:0.22, height:0.13}, scene);
-            vsLabel.material = mat;
-            vsLabel.position.x = 0;
-            vsLabel.position.y = 0.13;
-            vsLabel.position.z = field_width/2 + 0.18; // Just above the field
-            vsLabel.rotation.x = Math.PI/2;
-            vsLabel.parent = root;
-        }
-        // Texte par défaut
-        updateTeamLabels({blue_team_name: "Bleu", green_team_name: "Vert", blue_score: 0, green_score: 0});
-    }
-    function updateTeamLabels(data) {
-        if (!blueTeamLabel || !greenTeamLabel || !vsLabel) return;
-        // Blue label: name + score
-        const blueTex = blueTeamLabel.material.diffuseTexture;
-        blueTex.getContext().clearRect(0,0,512,128);
-        blueTex.drawText(
-            (data.blue_team_name || "Bleu") + "  " + (data.blue_score !== undefined ? data.blue_score : "0"),
-            24, 96, "bold 80px Arial", "#fff", "#1a4", true
-        );
-        blueTex.update();
-        // Green label: name + score
-        const greenTex = greenTeamLabel.material.diffuseTexture;
-        greenTex.getContext().clearRect(0,0,512,128);
-        greenTex.drawText(
-            (data.green_team_name || "Vert") + "  " + (data.green_score !== undefined ? data.green_score : "0"),
-            24, 96, "bold 80px Arial", "#fff", "#1a4", true
-        );
-        greenTex.update();
-        // VS label
-        const vsTex = vsLabel.material.diffuseTexture;
-        vsTex.getContext().clearRect(0,0,256,128);
-        vsTex.drawText("VS", 70, 96, "bold 90px Arial", "#fff", "#1976d2", true);
-        vsTex.update();
-    }
-    // Création immédiate des labels au chargement de la scène
-    createTeamLabels();
-    // --- Suppression des fonctions d'enregistrement, replay et export CSV ---
-    // --- Plein écran et options caméra ---
-    document.getElementById('fullscreen-btn').onclick = function() {
-        if (canvas.requestFullscreen) canvas.requestFullscreen();
-        else if (canvas.webkitRequestFullscreen) canvas.webkitRequestFullscreen();
-        else if (canvas.msRequestFullscreen) canvas.msRequestFullscreen();
-    };
-    // Ajout du zoom à la molette
-    canvas.addEventListener('wheel', function(e) {
-        e.preventDefault();
-        camera.radius += e.deltaY * 0.0007; // Zoom plus doux (réduction du facteur)
-        if (camera.radius < 0.5) camera.radius = 0.5;
-        if (camera.radius > 10) camera.radius = 10;
-    }, {passive:false});
-    // Rotation libre déjà activée par Babylon.js (drag souris)
-    // --- Appliquer la rotation globale de 180° autour de l'axe Y ---
-    root.rotation = new BABYLON.Vector3(0, Math.PI, 0);
-    </script>
+    <h1>Choisissez votre terrain</h1>
+    <div class="container">
+        {% for terrain in terrains %}
+        <a class="card" href="{{ terrain.url }}">
+            <div class="card-title">{{ terrain.name }}</div>
+            <div class="card-desc">{{ terrain.desc }}</div>
+        </a>
+        {% endfor %}
+    </div>
 </body>
 </html>
