@@ -66,4 +66,4 @@ def update_coordinates():
 
 if __name__ == '__main__':
     update_coordinates()  # Enregistre l'écouteur d'événements
-    socketio.run(app, host='127.0.0.1', port=5000, debug=True,)
+    socketio.run(app, host='127.0.0.1', port=1000, debug=True,)

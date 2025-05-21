@@ -14,28 +14,26 @@
       window.terrain_id = {{ terrain_id|tojson|safe }};
     </script>
     <style>
-        body {
-            background: linear-gradient(120deg, #e3f2fd 60%, #f8f8f8 100%);
-            font-family: 'Segoe UI', 'Arial', sans-serif;
-            margin: 0;
-            min-height: 100vh;
+        html, body {
+            overflow-x: hidden;
         }
         header {
             width: 100vw;
-            background: linear-gradient(90deg, #1976d2 60%, #64b5f6 100%);
+            background: linear-gradient(135deg, rgba(245,247,250,0.7) 0%, rgba(195,207,226,0.7) 0%), url('../static/img/cover-2022.jpg') center center/cover no-repeat fixed;
             box-shadow: 0 4px 24px #1976d233;
             padding: 0 0 18px 0;
             border-radius: 0 0 32px 32px;
         }
         h1 {
             text-align: center;
-            color: #fff;
+            color: #1976d2;
             font-size: 2.5em;
             margin: 0;
             padding: 32px 0 10px 0;
             letter-spacing: 1.5px;
             text-shadow: 0 2px 12px #1976d288;
         }
+        
         .config-bar {
             margin: 0 auto 18px auto;
             text-align: center;
@@ -67,7 +65,7 @@
             display: block;
             border: 3px solid #1a237e;
             background: linear-gradient(135deg, #e0ffe0 60%, #b3e5fc 100%);
-            margin: 30px auto 20px auto;
+            margin: 0 auto 20px auto;
             box-shadow: 0 12px 40px #1976d244, 0 1.5px 0 #fff8 inset;
             border-radius: 22px;
             transition: box-shadow 0.3s, border 0.2s;
@@ -107,6 +105,7 @@
                 gap: 10px;
             }
         }
+
     </style>
 </head>
 <body>
@@ -119,7 +118,7 @@
             <button onclick="setView('side')">Vue latérale</button>
             <button onclick="setView('perspective')">Perspective</button>
         </div>
-        <div id="score-bar" style="margin: 18px auto 0 auto; text-align: center; font-size: 1.3em; font-weight: bold; color: #1976d2; background: #e3f2fd; border-radius: 12px; padding: 8px 24px; display: inline-block; box-shadow: 0 2px 8px #1976d222;">
+        <div id="score-bar" style="margin: 18px auto 0 auto; text-align: center; font-size: 1.3em; font-weight: bold; color: #1976d2; background: #e3f2fd; border-radius: 12px; padding: 8px 24px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 8px #1976d222; width: fit-content;">
             <span id="blue-team-name">Bleu</span>
             <span style="margin: 0 18px; color: #888;">-</span>
             <span id="blue-score">0</span>
@@ -128,11 +127,14 @@
             <span style="margin: 0 18px; color: #888;">-</span>
             <span id="green-team-name">Vert</span>
         </div>
-    </header>
-    <canvas id="terrain3d" tabindex="0"></canvas>
-    <footer>
+        <div class="config-bar"></div>
+
+        <canvas id="terrain3d" tabindex="0" style="display:block;margin:0 auto 20px auto;"></canvas>
         <p class="footer-signature">Développé par Samuel Legrand - 2025</p>
-    </footer>
+    </header>
+    
+
+
     <!-- Injection sûre de l'id du terrain depuis Flask, avant tout JS -->
     <script type="text/javascript">
       // Flask will inject terrain_id here; if not running via Flask, set a default for testing
@@ -441,91 +443,234 @@
         }
     }
     // --- Affichage du score et des équipes sur le terrain 3D ---
-    // Charger Babylon.js GUI si ce n'est pas déjà fait
-    if (typeof BABYLON.GUI === 'undefined') {
-        var guiScript = document.createElement('script');
-        guiScript.src = 'https://cdn.babylonjs.com/gui/babylon.gui.min.js';
-        guiScript.onload = function() {
-            createScorePanel();
-        };
-        document.head.appendChild(guiScript);
-    } else {
-        createScorePanel();
-    }
-    function createScorePanel() {
-        const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
-        const scorePanel = new BABYLON.GUI.Rectangle();
-        scorePanel.height = "60px";
-        scorePanel.cornerRadius = 16;
-        scorePanel.color = "#1976d2";
-        scorePanel.thickness = 3;
-        scorePanel.background = "#e3f2fd";
-        scorePanel.top = "30px";
-        scorePanel.left = "0px";
-        scorePanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-        scorePanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-        scorePanel.width = 1; // largeur relative (100%) pour permettre l'agrandissement
-        scorePanel.paddingLeft = "30px";
-        scorePanel.paddingRight = "30px";
-        advancedTexture.addControl(scorePanel);
-        // Utilisation d'un StackPanel horizontal pour éviter la superposition
+    (function ensureScoreBar3D() {
+        if (window._scoreBar3D_created) {
+            console.log('[ScoreBar3D] Déjà créé.');
+            return;
+        }
+        function createScoreBar3D() {
+            if (window._scoreBar3D_created) {
+                console.log('[ScoreBar3D] Double création évitée.');
+                return;
+            }
+            window._scoreBar3D_created = true;
+            if (!window.scene) {
+                console.warn('[ScoreBar3D] Scène Babylon.js non trouvée.');
+                return;
+            }
+            console.log('[ScoreBar3D] Création du panneau GUI 3D...');
+            const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("scoreBar3D", true, window.scene);
+            const scoreBar = new BABYLON.GUI.Rectangle();
+            scoreBar.height = "54px";
+            scoreBar.cornerRadius = 12;
+            scoreBar.color = "#1976d2";
+            scoreBar.thickness = 2;
+            scoreBar.background = "#e3f2fd";
+            scoreBar.top = "30px";
+            scoreBar.left = "0px";
+            scoreBar.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+            scoreBar.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+            scoreBar.width = "auto";
+            scoreBar.paddingLeft = "24px";
+            scoreBar.paddingRight = "24px";
+            scoreBar.shadowBlur = 8;
+            scoreBar.shadowColor = "#1976d244";
+            advancedTexture.addControl(scoreBar);
+            // StackPanel horizontal pour la structure
+            const stackPanel = new BABYLON.GUI.StackPanel();
+            stackPanel.isVertical = false;
+            stackPanel.height = "100%";
+            stackPanel.width = 1;
+            stackPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+            stackPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+            scoreBar.addControl(stackPanel);
+            // Bleu nom
+            const blueTeamName = new BABYLON.GUI.TextBlock();
+            blueTeamName.text = "Bleu";
+            blueTeamName.color = "#1976d2";
+            blueTeamName.fontSize = 28;
+            blueTeamName.fontWeight = "bold";
+            blueTeamName.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+            blueTeamName.paddingRight = "18px";
+            stackPanel.addControl(blueTeamName);
+            // Tiret
+            const dash1 = new BABYLON.GUI.TextBlock();
+            dash1.text = "-";
+            dash1.color = "#888";
+            dash1.fontSize = 28;
+            dash1.paddingLeft = "8px";
+            dash1.paddingRight = "8px";
+            stackPanel.addControl(dash1);
+            // Bleu score
+            const blueScore = new BABYLON.GUI.TextBlock();
+            blueScore.text = "0";
+            blueScore.color = "#1976d2";
+            blueScore.fontSize = 28;
+            blueScore.fontWeight = "bold";
+            blueScore.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+            blueScore.paddingRight = "18px";
+            stackPanel.addControl(blueScore);
+            // Tiret
+            const dash2 = new BABYLON.GUI.TextBlock();
+            dash2.text = "-";
+            dash2.color = "#888";
+            dash2.fontSize = 28;
+            dash2.paddingLeft = "8px";
+            dash2.paddingRight = "8px";
+            stackPanel.addControl(dash2);
+            // Vert score
+            const greenScore = new BABYLON.GUI.TextBlock();
+            greenScore.text = "0";
+            greenScore.color = "#388e3c";
+            greenScore.fontSize = 28;
+            greenScore.fontWeight = "bold";
+            greenScore.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+            greenScore.paddingRight = "18px";
+            stackPanel.addControl(greenScore);
+            // Tiret
+            const dash3 = new BABYLON.GUI.TextBlock();
+            dash3.text = "-";
+            dash3.color = "#888";
+            dash3.fontSize = 28;
+            dash3.paddingLeft = "8px";
+            dash3.paddingRight = "8px";
+            stackPanel.addControl(dash3);
+            // Vert nom
+            const greenTeamName = new BABYLON.GUI.TextBlock();
+            greenTeamName.text = "Vert";
+            greenTeamName.color = "#388e3c";
+            greenTeamName.fontSize = 28;
+            greenTeamName.fontWeight = "bold";
+            greenTeamName.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+            stackPanel.addControl(greenTeamName);
+            // Mise à jour dynamique
+            function updateScoreBar3D(data) {
+                if (data.blue_team_name) blueTeamName.text = data.blue_team_name;
+                if (data.green_team_name) greenTeamName.text = data.green_team_name;
+                if (typeof data.blue_score !== 'undefined') blueScore.text = data.blue_score;
+                if (typeof data.green_score !== 'undefined') greenScore.text = data.green_score;
+            }
+            // Mise à jour à chaque réception
+            socket.on('update_coordinates_' + terrain_id, function(data) {
+                console.log('[ScoreBar3D] Données reçues:', data);
+                updateScoreBar3D(data);
+            });
+            console.log('[ScoreBar3D] Panneau GUI 3D créé.');
+        }
+        function waitForSceneAndCreate() {
+            if (window.scene && typeof BABYLON !== 'undefined' && BABYLON.GUI) {
+                createScoreBar3D();
+            } else {
+                setTimeout(waitForSceneAndCreate, 200);
+            }
+        }
+        if (typeof BABYLON === 'undefined' || typeof BABYLON.GUI === 'undefined') {
+            var guiScript = document.createElement('script');
+            guiScript.src = 'https://cdn.babylonjs.com/gui/babylon.gui.min.js';
+            guiScript.onload = waitForSceneAndCreate;
+            document.head.appendChild(guiScript);
+        } else {
+            waitForSceneAndCreate();
+        }
+    })();
+    // --- Affichage du score et des équipes sur le terrain 3D (format identique à la barre HTML) ---
+    function createScoreBar3D() {
+        if (window._scoreBar3DCreated) return;
+        window._scoreBar3DCreated = true;
+        const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("scoreBar3D");
+        const scoreBar = new BABYLON.GUI.Rectangle();
+        scoreBar.height = "54px";
+        scoreBar.cornerRadius = 12;
+        scoreBar.color = "#1976d2";
+        scoreBar.thickness = 2;
+        scoreBar.background = "#e3f2fd";
+        scoreBar.top = "30px";
+        scoreBar.left = "0px";
+        scoreBar.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        scoreBar.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+        scoreBar.width = "auto";
+        scoreBar.paddingLeft = "24px";
+        scoreBar.paddingRight = "24px";
+        scoreBar.shadowBlur = 8;
+        scoreBar.shadowColor = "#1976d244";
+        advancedTexture.addControl(scoreBar);
+        // StackPanel horizontal pour la structure
         const stackPanel = new BABYLON.GUI.StackPanel();
         stackPanel.isVertical = false;
         stackPanel.height = "100%";
         stackPanel.width = 1;
         stackPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
         stackPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-        scorePanel.addControl(stackPanel);
-        // Noms et scores
-        const blueTeamText = new BABYLON.GUI.TextBlock();
-        blueTeamText.text = "Bleu";
-        blueTeamText.color = "#1976d2";
-        blueTeamText.fontSize = 28;
-        blueTeamText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-        blueTeamText.resizeToFit = true;
-        blueTeamText.textWrapping = true;
-        blueTeamText.paddingRight = "16px";
-        stackPanel.addControl(blueTeamText);
-        const blueScoreText = new BABYLON.GUI.TextBlock();
-        blueScoreText.text = "0";
-        blueScoreText.color = "#1976d2";
-        blueScoreText.fontSize = 32;
-        blueScoreText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-        blueScoreText.paddingRight = "24px";
-        stackPanel.addControl(blueScoreText);
-        const dashText = new BABYLON.GUI.TextBlock();
-        dashText.text = "-";
-        dashText.color = "#888";
-        dashText.fontSize = 28;
-        dashText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-        dashText.paddingRight = "24px";
-        dashText.paddingLeft = "24px";
-        stackPanel.addControl(dashText);
-        const greenScoreText = new BABYLON.GUI.TextBlock();
-        greenScoreText.text = "0";
-        greenScoreText.color = "#388e3c";
-        greenScoreText.fontSize = 32;
-        greenScoreText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-        greenScoreText.paddingRight = "16px";
-        stackPanel.addControl(greenScoreText);
-        const greenTeamText = new BABYLON.GUI.TextBlock();
-        greenTeamText.text = "Vert";
-        greenTeamText.color = "#388e3c";
-        greenTeamText.fontSize = 28;
-        greenTeamText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-        greenTeamText.resizeToFit = true;
-        greenTeamText.textWrapping = true;
-        stackPanel.addControl(greenTeamText);
-        // Fonction de mise à jour du panneau
-        function updateScorePanel(data) {
-            if (data.blue_team_name) blueTeamText.text = data.blue_team_name;
-            if (data.green_team_name) greenTeamText.text = data.green_team_name;
-            if (typeof data.blue_score !== 'undefined') blueScoreText.text = data.blue_score;
-            if (typeof data.green_score !== 'undefined') greenScoreText.text = data.green_score;
+        scoreBar.addControl(stackPanel);
+        // Bleu nom
+        const blueTeamName = new BABYLON.GUI.TextBlock();
+        blueTeamName.text = "Bleu";
+        blueTeamName.color = "#1976d2";
+        blueTeamName.fontSize = 28;
+        blueTeamName.fontWeight = "bold";
+        blueTeamName.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        blueTeamName.paddingRight = "18px";
+        stackPanel.addControl(blueTeamName);
+        // Tiret
+        const dash1 = new BABYLON.GUI.TextBlock();
+        dash1.text = "-";
+        dash1.color = "#888";
+        dash1.fontSize = 28;
+        dash1.paddingLeft = "8px";
+        dash1.paddingRight = "8px";
+        stackPanel.addControl(dash1);
+        // Bleu score
+        const blueScore = new BABYLON.GUI.TextBlock();
+        blueScore.text = "0";
+        blueScore.color = "#1976d2";
+        blueScore.fontSize = 28;
+        blueScore.fontWeight = "bold";
+        blueScore.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        blueScore.paddingRight = "18px";
+        stackPanel.addControl(blueScore);
+        // Tiret
+        const dash2 = new BABYLON.GUI.TextBlock();
+        dash2.text = "-";
+        dash2.color = "#888";
+        dash2.fontSize = 28;
+        dash2.paddingLeft = "8px";
+        dash2.paddingRight = "8px";
+        stackPanel.addControl(dash2);
+        // Vert score
+        const greenScore = new BABYLON.GUI.TextBlock();
+        greenScore.text = "0";
+        greenScore.color = "#388e3c";
+        greenScore.fontSize = 28;
+        greenScore.fontWeight = "bold";
+        greenScore.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        greenScore.paddingRight = "18px";
+        stackPanel.addControl(greenScore);
+        // Tiret
+        const dash3 = new BABYLON.GUI.TextBlock();
+        dash3.text = "-";
+        dash3.color = "#888";
+        dash3.fontSize = 28;
+        dash3.paddingLeft = "8px";
+        dash3.paddingRight = "8px";
+        stackPanel.addControl(dash3);
+        // Vert nom
+        const greenTeamName = new BABYLON.GUI.TextBlock();
+        greenTeamName.text = "Vert";
+        greenTeamName.color = "#388e3c";
+        greenTeamName.fontSize = 28;
+        greenTeamName.fontWeight = "bold";
+        greenTeamName.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        stackPanel.addControl(greenTeamName);
+        // Mise à jour dynamique
+        function updateScoreBar3D(data) {
+            if (data.blue_team_name) blueTeamName.text = data.blue_team_name;
+            if (data.green_team_name) greenTeamName.text = data.green_team_name;
+            if (typeof data.blue_score !== 'undefined') blueScore.text = data.blue_score;
+            if (typeof data.green_score !== 'undefined') greenScore.text = data.green_score;
         }
-        // Appeler updateScorePanel à chaque réception de données
+        // Mise à jour à chaque réception
         socket.on('update_coordinates_' + terrain_id, function(data) {
-            updateScorePanel(data);
+            updateScoreBar3D(data);
         });
     }
     // --- Fonctions de vue caméra ---
@@ -563,6 +708,149 @@
     window.addEventListener("resize", function () {
         engine.resize();
     });
+    // --- Affichage dynamique des noms d'équipe et scores ---
+    let blueTeamLabel, greenTeamLabel, vsLabel;
+    function createTeamLabels() {
+        // Blue team label (right, outside field)
+        if (!blueTeamLabel) {
+            const tex = new BABYLON.DynamicTexture("blueTeamTex", {width:512, height:128}, scene, false);
+            tex.hasAlpha = true;
+            const mat = new BABYLON.StandardMaterial("blueTeamMat", scene);
+            mat.diffuseTexture = tex;
+            mat.emissiveColor = new BABYLON.Color3(1,1,1);
+            mat.specularColor = new BABYLON.Color3(0,0,0);
+            mat.backFaceCulling = false;
+            blueTeamLabel = BABYLON.MeshBuilder.CreatePlane("blueTeamLabel", {width:0.55, height:0.13}, scene);
+            blueTeamLabel.material = mat;
+            blueTeamLabel.position.x = field_length/2 + teamZoneLength/2 + 0.01;
+            blueTeamLabel.position.y = 0.13;
+            blueTeamLabel.position.z = field_width/2 + 0.18; // aligné avec VS
+            blueTeamLabel.rotation.x = Math.PI/2;
+            blueTeamLabel.parent = root;
+        }
+        // Green team label (left, outside field)
+        if (!greenTeamLabel) {
+            const tex = new BABYLON.DynamicTexture("greenTeamTex", {width:512, height:128}, scene, false);
+            tex.hasAlpha = true;
+            const mat = new BABYLON.StandardMaterial("greenTeamMat", scene);
+            mat.diffuseTexture = tex;
+            mat.emissiveColor = new BABYLON.Color3(1,1,1);
+            mat.specularColor = new BABYLON.Color3(0,0,0);
+            mat.backFaceCulling = false;
+            greenTeamLabel = BABYLON.MeshBuilder.CreatePlane("greenTeamLabel", {width:0.55, height:0.13}, scene);
+            greenTeamLabel.material = mat;
+            greenTeamLabel.position.x = -field_length/2 - teamZoneLength/2 - 0.01;
+            greenTeamLabel.position.y = 0.13;
+            greenTeamLabel.position.z = field_width/2 + 0.18; // aligné avec VS
+            greenTeamLabel.rotation.x = Math.PI/2;
+            greenTeamLabel.parent = root;
+        }
+        // VS label (center, outside field)
+        if (!vsLabel) {
+            const tex = new BABYLON.DynamicTexture("vsTex", {width:256, height:128}, scene, false);
+            tex.hasAlpha = true;
+            const mat = new BABYLON.StandardMaterial("vsMat", scene);
+            mat.diffuseTexture = tex;
+            mat.emissiveColor = new BABYLON.Color3(1,1,1);
+            mat.specularColor = new BABYLON.Color3(0,0,0);
+            mat.backFaceCulling = false;
+            vsLabel = BABYLON.MeshBuilder.CreatePlane("vsLabel", {width:0.22, height:0.13}, scene);
+            vsLabel.material = mat;
+            vsLabel.position.x = 0;
+            vsLabel.position.y = 0.13;
+            vsLabel.position.z = field_width/2 + 0.18; // Just above the field
+            vsLabel.rotation.x = Math.PI/2;
+            vsLabel.parent = root;
+        }
+        // Texte par défaut
+        updateTeamLabels({blue_team_name: "Bleu", green_team_name: "Vert", blue_score: 0, green_score: 0});
+    }
+    function updateTeamLabels(data) {
+        if (!blueTeamLabel || !greenTeamLabel || !vsLabel) return;
+        // Blue label: name + score
+        const blueTex = blueTeamLabel.material.diffuseTexture;
+        blueTex.getContext().clearRect(0,0,512,128);
+        blueTex.drawText(
+            (data.blue_team_name || "Bleu") + "  " + (data.blue_score !== undefined ? data.blue_score : "0"),
+            24, 96, "bold 80px Arial", "#fff", "#1a4", true
+        );
+        blueTex.update();
+        // Green label: name + score
+        const greenTex = greenTeamLabel.material.diffuseTexture;
+        greenTex.getContext().clearRect(0,0,512,128);
+        greenTex.drawText(
+            (data.green_team_name || "Vert") + "  " + (data.green_score !== undefined ? data.green_score : "0"),
+            24, 96, "bold 80px Arial", "#fff", "#1a4", true
+        );
+        greenTex.update();
+        // VS label
+        const vsTex = vsLabel.material.diffuseTexture;
+        vsTex.getContext().clearRect(0,0,256,128);
+        vsTex.drawText("VS", 70, 96, "bold 90px Arial", "#fff", "#1976d2", true);
+        vsTex.update();
+    }
+    // Création immédiate des labels au chargement de la scène
+    createTeamLabels();
+    // Mettre à jour dynamiquement à chaque réception de données
+    socket.on('update_coordinates_' + terrain_id, function(data) {
+        updateTeamLabels(data);
+    });
+    // --- Affichage du score et des équipes sur le terrain 3D ---
+    (function ensureScoreBoard3D() {
+        if (window._scoreBoard3D_created) return;
+        function createScoreBoard3D() {
+            if (window._scoreBoard3D_created) return;
+            window._scoreBoard3D_created = true;
+            if (!window.scene) {
+                console.warn('[ScoreBoard3D] Scène Babylon.js non trouvée.');
+                return;
+            }
+            // Création d'un plan 3D pour le score
+            var scorePlane = BABYLON.MeshBuilder.CreatePlane("scoreBoard3D", {width: 2, height: 0.4}, window.scene);
+            scorePlane.position = new BABYLON.Vector3(0, 1.2, 0); // au-dessus du terrain
+            scorePlane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_Y;
+            // Texture dynamique pour le score
+            var dt = new BABYLON.DynamicTexture("scoreBoardTexture", {width:1024, height:200}, window.scene, false);
+            var ctx = dt.getContext();
+            function drawScore(data) {
+                ctx.clearRect(0,0,1024,200);
+                ctx.font = "bold 60px Arial";
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#1976d2";
+                ctx.fillText((data.blue_team_name || "Bleu") + "  ", 350, 90);
+                ctx.fillStyle = "#388e3c";
+                ctx.fillText((data.green_team_name || "Vert"), 670, 90);
+                ctx.fillStyle = "#222";
+                ctx.font = "bold 70px Arial";
+                ctx.fillText((typeof data.blue_score !== 'undefined' ? data.blue_score : 0) + "  -  " + (typeof data.green_score !== 'undefined' ? data.green_score : 0), 512, 150);
+                dt.update();
+            }
+            drawScore({}); // Initial
+            scorePlane.material = new BABYLON.StandardMaterial("scoreBoardMat", window.scene);
+            scorePlane.material.diffuseTexture = dt;
+            scorePlane.material.emissiveColor = new BABYLON.Color3(1,1,1);
+            scorePlane.material.specularColor = new BABYLON.Color3(0,0,0);
+            // Mise à jour dynamique
+            socket.on('update_coordinates_' + terrain_id, function(data) {
+                drawScore(data);
+            });
+        }
+        function waitForSceneAndCreate() {
+            if (window.scene && typeof BABYLON !== 'undefined' && BABYLON.DynamicTexture) {
+                createScoreBoard3D();
+            } else {
+                setTimeout(waitForSceneAndCreate, 200);
+            }
+        }
+        if (typeof BABYLON === 'undefined' || typeof BABYLON.DynamicTexture === 'undefined') {
+            var babylonScript = document.createElement('script');
+            babylonScript.src = 'https://cdn.babylonjs.com/babylon.js';
+            babylonScript.onload = waitForSceneAndCreate;
+            document.head.appendChild(babylonScript);
+        } else {
+            waitForSceneAndCreate();
+        }
+    })();
     </script>
 </body>
 </html>
